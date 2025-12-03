@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# OWC (Oscillating Water Column) 案例运行脚本
+# OpenFOAM v2106 + waveFoam v2156
+
+echo "========================================="
+echo "OWC 案例运行脚本"
+echo "========================================="
+
+# 检查是否安装了OpenFOAM
+if ! command -v blockMesh &> /dev/null; then
+    echo "错误: 未找到OpenFOAM命令，请确保已加载OpenFOAM环境"
+    exit 1
+fi
+
+echo "1. 生成网格..."
+blockMesh > log.blockMesh 2>&1
+if [ $? -eq 0 ]; then
+    echo "   网格生成成功"
+else
+    echo "   网格生成失败，请检查log.blockMesh文件"
+    exit 1
+fi
+
+echo "2. 初始化条件..."
+setFields > log.setFields 2>&1
+if [ $? -eq 0 ]; then
+    echo "   初始条件设置成功"
+else
+    echo "   初始条件设置失败，请检查log.setFields文件"
+    exit 1
+fi
+
+echo "3. 运行waveFoam求解器..."
+waveFoam > log.waveFoam 2>&1 &
+PID=$!
+echo "   waveFoam已启动 (PID: $PID)"
+echo "   查看实时日志: tail -f log.waveFoam"
+
+# 给用户显示一些提示信息
+echo ""
+echo "========================================="
+echo "案例运行提示:"
+echo "- 求解器正在后台运行 (PID: $PID)"
+echo "- 可通过 'tail -f log.waveFoam' 查看实时日志"
+echo "- 可通过 'kill $PID' 停止计算"
+echo "- 探针数据保存在 postProcessing/probes/ 目录下"
+echo "- 可使用ParaView查看结果: paraFoam"
+echo "========================================="
+
+exit 0
